@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
+import { api } from "@/lib/api";
 
 type FormValues = {
   propertyName: string;
@@ -41,9 +42,8 @@ export default function CapturePage() {
   const onSubmit = (data: FormValues) => {
     (async () => {
       try {
-        const res = await fetch("/api/inspections", {
+        const inspection = await api<{ id: string }>("/api/inspections", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             propertyName: data.propertyName,
             address: data.address,
@@ -52,14 +52,11 @@ export default function CapturePage() {
             flags: [],
           }),
         });
-        if (!res.ok) throw new Error("Failed to create inspection");
-        const inspection = await res.json();
 
         const files = Array.from(data.photos ?? []);
         for (const file of files) {
-          await fetch(`/api/inspections/${inspection.id}/photos`, {
+          await api(`/api/inspections/${inspection.id}/photos`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               key: "mock/local-file.jpg",
               fileName: file.name,
