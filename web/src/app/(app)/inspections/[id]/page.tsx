@@ -3,3 +3,4 @@ export default function InspectionDetailPage({ params }: { params: { id: string 
 }
 
 
+

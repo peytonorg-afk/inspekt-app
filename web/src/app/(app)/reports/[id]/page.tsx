@@ -3,3 +3,4 @@ export default function ReportDetailPage({ params }: { params: { id: string } })
 }
 
 
+
