@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/mockDb";
 import { randomUUID } from "crypto";
 
-export async function POST(_: Request, { params }: { params: { inspectionId: string } }) {
-  const ins = db.inspections.get(params.inspectionId);
+export async function POST(_: Request, { params }: { params: { id: string } }) {
+  const ins = db.inspections.get(params.id);
   if (!ins) return NextResponse.json({ error: "Inspection not found" }, { status: 404 });
   const id = randomUUID();
   const now = Date.now();

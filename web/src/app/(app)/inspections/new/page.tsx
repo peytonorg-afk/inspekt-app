@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { draft } from "@/lib/draft";
+import { enqueue } from "@/lib/uploadQueue";
 
 type FormValues = {
   propertyName: string;
@@ -32,6 +34,21 @@ export default function CapturePage() {
   });
 
   const [photoNames, setPhotoNames] = useState<string[]>([]);
+  // autosave/restore draft minimal
+  React.useEffect(() => {
+    (async () => {
+      const d = await draft.load();
+      if (d?.v) {
+        // @ts-expect-error partial
+        setValue("propertyName", d.v.propertyName ?? "");
+        // restore other fields if present
+      }
+    })();
+  }, [setValue]);
+  React.useEffect(() => {
+    const sub = watch((v) => draft.save(v));
+    return () => sub.unsubscribe();
+  }, [watch]);
 
   const onPhotos = (files: FileList | null) => {
     if (!files) return;
@@ -55,14 +72,14 @@ export default function CapturePage() {
 
         const files = Array.from(data.photos ?? []);
         for (const file of files) {
-          await api(`/api/inspections/${inspection.id}/photos`, {
-            method: "POST",
-            body: JSON.stringify({
-              key: "mock/local-file.jpg",
-              fileName: file.name,
-              bytes: file.size,
-            }),
-          });
+          try {
+            await api(`/api/inspections/${inspection.id}/photos`, {
+              method: "POST",
+              body: JSON.stringify({ key: "mock/local-file.jpg", fileName: file.name, bytes: file.size }),
+            });
+          } catch {
+            enqueue({ inspectionId: inspection.id, file });
+          }
         }
 
         alert("Saved draft to mock API.");
