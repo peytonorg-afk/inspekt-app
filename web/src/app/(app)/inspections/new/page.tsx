@@ -39,8 +39,41 @@ export default function CapturePage() {
   };
 
   const onSubmit = (data: FormValues) => {
-    console.log("Submitted form:", data);
-    alert("Saved locally. (Next: wire to backend + PDF)");
+    (async () => {
+      try {
+        const res = await fetch("/api/inspections", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            propertyName: data.propertyName,
+            address: data.address,
+            notes: data.notes,
+            checklist: [],
+            flags: [],
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to create inspection");
+        const inspection = await res.json();
+
+        const files = Array.from(data.photos ?? []);
+        for (const file of files) {
+          await fetch(`/api/inspections/${inspection.id}/photos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              key: "mock/local-file.jpg",
+              fileName: file.name,
+              bytes: file.size,
+            }),
+          });
+        }
+
+        alert("Saved draft to mock API.");
+      } catch (e) {
+        console.error(e);
+        alert("Failed to save draft.");
+      }
+    })();
   };
 
   const checklist = watch("checklist");
